@@ -1,0 +1,15 @@
+{
+  "config": "mac_q4_0_prune12_reference",
+  "n": 1000,
+  "accuracy": 0.052,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 246.2,
+  "p50_prompt_ms": 207.0,
+  "thinking": false,
+  "methods": {
+    "logprob": 0,
+    "generated": 186,
+    "none": 814,
+    "error": 0
+  }
+}

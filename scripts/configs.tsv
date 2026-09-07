@@ -1,0 +1,29 @@
+# name	model	dev_args	env	completion_args	mmlu	server_extra
+# mmlu: full = 1000 samples, sanity = 100 samples, no = perf only
+# --- baselines
+cpu_q4_0_baseline	gemma-4-E2B-it-Q4_0.gguf	-dev none -ngl 0 -t 6	-	-	full	-c 2048 -np 1 -t 6
+htp_q4_0_default	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	-	-	full	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+# --- execution / kernel sweeps (weights unchanged -> perf only, one sanity MMLU)
+htp_oppoll	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1	-	full	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_q4_0_hvx_only	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_NHMX=0	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_q4_0_mm_tiled	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_MM_SELECT=2	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_q4_0_fa_hvx	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_FA_SELECT=1	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_q4_0_fa_off	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa off	-	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa off
+htp_q4_0_t4	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 4 -fa on	-	-	no	-c 2048 -np 1 -t 4 -ngl 99 -fa on
+htp_q4_0_kvq8	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on -ctk q8_0 -ctv q8_0	-	-	sanity	-c 2048 -np 1 -t 6 -ngl 99 -fa on -ctk q8_0 -ctv q8_0
+htp_q4_0_lmhead_cpu	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on -ot token_embd.weight=CPU	-	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on -ot token_embd.weight=CPU
+# --- speculative decoding (drafter on CPU as in upstream S26+ run); llama-bench cannot load drafter -> skip-bench
+htp_q4_0_mtp3	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	-	-md /data/local/tmp/gguf/mtp-gemma-4-E2B-it-Q4_0.gguf --spec-type draft-mtp --spec-draft-n-max 3 --spec-draft-device none	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on -md /data/local/tmp/gguf/mtp-gemma-4-E2B-it-Q4_0.gguf --spec-type draft-mtp --spec-draft-n-max 3 --spec-draft-device none
+# --- quantization variants. Mac MMLU (n=1000): Q8_0 58.1 | Q4_0 56.8 | IQ4_NL+Q4head 55.7 | IQ4_NL 55.6 | Q4_0+Q4head 52.1 | Q4_0+IQ4NLhead 51.1
+# -> head must stay Q8_0; IQ4_NL gains nothing. Keep Q8_0 (quality ceiling, full MMLU) and Q4_0-embq4 perf-only to quantify bytes/token -> tok/s.
+htp_q4_0_emb_q4	gemma-4-E2B-it-Q4_0-embq4.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	-	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_q8_0_oppoll	gemma-4-E2B-it-Q8_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1	-	full	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_oppoll_fuse	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1 GGML_HEXAGON_OPFUSION=1	-	full	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_oppoll_nofuse	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1 GGML_HEXAGON_OPFUSION=62	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+# --- Adreno GPU (OpenCL) backend, perf only: dominated (prefill 319 < NPU 810, decode 26 < CPU 37)
+gpu_q4_0	gemma-4-E2B-it-Q4_0.gguf	-dev GPUOpenCL -ngl 99 -t 6 -fa on	-	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+htp_q4_0_default_prepatch	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPFUSION=62	-	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on
+# --- accuracy-budget variants (2026-09-07): 4-bit LM head requantized from the STOCK Q4_0 (on-device: llama-quantize --allow-requantize --token-embedding-type q4_0)
+htp_head4	gemma-4-E2B-it-Q4_0-head4.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1	--fit off	full	-c 2048 -np 1 -t 6 -ngl 99 -fa on --fit off
+htp_prune4	gemma-4-E2B-it-Q4_0-prune4.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1	--fit off	no	-c 2048 -np 1 -t 6 -ngl 99 -fa on --fit off
+htp_head_mxfp4	gemma-4-E2B-it-Q4_0-head_mxfp4.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1	--fit off	full	-c 2048 -np 1 -t 6 -ngl 99 -fa on --fit off

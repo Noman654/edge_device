@@ -1,0 +1,15 @@
+{
+  "config": "htp_head4",
+  "n": 1000,
+  "accuracy": 0.563,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 312.5,
+  "p50_prompt_ms": 250.5,
+  "thinking": false,
+  "methods": {
+    "logprob": 1000,
+    "generated": 0,
+    "none": 0,
+    "error": 0
+  }
+}

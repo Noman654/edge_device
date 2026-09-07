@@ -1,0 +1,15 @@
+{
+  "config": "cpu_q4_0_baseline",
+  "n": 1000,
+  "accuracy": 0.569,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 606.7,
+  "p50_prompt_ms": 515.7,
+  "thinking": false,
+  "methods": {
+    "logprob": 1000,
+    "generated": 0,
+    "none": 0,
+    "error": 0
+  }
+}

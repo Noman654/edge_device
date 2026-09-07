@@ -1,0 +1,15 @@
+{
+  "config": "mac_q8_0_reference",
+  "n": 1000,
+  "accuracy": 0.581,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 418.5,
+  "p50_prompt_ms": 336.4,
+  "thinking": false,
+  "methods": {
+    "logprob": 995,
+    "generated": 0,
+    "none": 5,
+    "error": 0
+  }
+}

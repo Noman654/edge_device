@@ -1,0 +1,6 @@
+== HTP0
+  q4_0     650.2 us/run    33.0 MB    50.8 GB/s
+  q8_0    1141.4 us/run    62.4 MB    54.7 GB/s
+== CPU
+  q4_0     779.1 us/run    33.0 MB    42.4 GB/s
+  q8_0    1143.4 us/run    62.4 MB    54.6 GB/s

@@ -1,0 +1,8 @@
+chunk             PPL               ln(PPL(Q)/PPL(base))          KL Divergence              Δp RMS            Same top p
+Mean PPL(Q)-PPL(base)         :   0.247173 ±   0.157490
+Mean    KLD:   0.003376 ±   0.000891
+Maximum KLD:   1.326332
+99.0%   KLD:   0.028706
+Median  KLD:   0.000644
+RMS Δp    :  1.568 ± 0.137 %
+Same top p: 97.647 ± 0.388 %

@@ -1,0 +1,15 @@
+{
+  "config": "mac_q4_0_embiq4_reference",
+  "n": 1000,
+  "accuracy": 0.511,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 358.7,
+  "p50_prompt_ms": 293.7,
+  "thinking": false,
+  "methods": {
+    "logprob": 987,
+    "generated": 0,
+    "none": 13,
+    "error": 0
+  }
+}

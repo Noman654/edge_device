@@ -1,0 +1,15 @@
+{
+  "config": "mac_q4_0_head_iq4_nl_reference",
+  "n": 1000,
+  "accuracy": 0.565,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 342.3,
+  "p50_prompt_ms": 272.6,
+  "thinking": false,
+  "methods": {
+    "logprob": 1000,
+    "generated": 0,
+    "none": 0,
+    "error": 0
+  }
+}

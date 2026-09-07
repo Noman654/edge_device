@@ -1,0 +1,193 @@
+diff --git a/ggml/src/ggml-hexagon/ggml-hexagon.cpp b/ggml/src/ggml-hexagon/ggml-hexagon.cpp
+index 104201d..a52125f 100644
+--- a/ggml/src/ggml-hexagon/ggml-hexagon.cpp
++++ b/ggml/src/ggml-hexagon/ggml-hexagon.cpp
+@@ -89,7 +89,8 @@ static int    opt_verbose = 0;
+ static int    opt_profile = 0; // profiling mode (0-disabled, 1-basic, 2-pmu)
+ static bool   opt_hostbuf = false;
+ 
+-static int    opt_mm_select = 3; // 3 = HMX -> Tiled -> Flat -> CPU, 2 = Tiled -> Flat -> CPU, 1 = Flat -> CPU
++static int    opt_mm_select = 3;
++static int    opt_hmx_min_nrows = HTP_MM_HMX_MIN_NROWS; // matmuls with M <= this use HVX GEMV/GEMM, above use HMX (GGML_HEXAGON_HMX_MIN_NROWS) // 3 = HMX -> Tiled -> Flat -> CPU, 2 = Tiled -> Flat -> CPU, 1 = Flat -> CPU
+ static int    opt_fa_select = 2; // 2 = HMX -> HVX -> CPU, 1 = HVX -> CPU, 0 = CPU (unsupported)
+ static int    opt_ar_select = 2; // 2 = fused ALLREDUCE+ADD (DMA, default), 1 = unfused ALLREDUCE (DMA), 0 = fallback to CPY+FENCE
+ 
+@@ -110,6 +111,7 @@ enum ggml_hexagon_fusion_flags {
+     GGML_HEXAGON_FUSE_MUL_MAT_ADD   = (1 << 3), // 8
+     GGML_HEXAGON_FUSE_MUL_MAT_NX    = (1 << 4), // 16
+     GGML_HEXAGON_FUSE_MUL_MAT_ID_NX = (1 << 5), // 32
++    GGML_HEXAGON_FUSE_GELU_MUL      = (1 << 6), // 64
+ };
+ 
+ static inline bool ggml_hexagon_is_fusion_enabled(int flag) {
+@@ -2094,6 +2096,97 @@ struct ggml_hexagon_opbatch {
+         return true;
+     }
+ 
++    // Fuse UNARY_GELU followed by MUL into the existing two-operand GEGLU kernel:
++    //   geglu(x, g) = gelu(x) * g
++    //
++    // Gemma-4's per-layer-embedding gate is hand-rolled in gemma4.cpp as ggml_gelu()
++    // followed by ggml_mul() (35 pairs per token), whereas build_ffn() emits
++    // ggml_geglu_split() and reaches the fused kernel directly. Fusing here saves one
++    // dispatch per layer and, more importantly, routes the activation through the
++    // tanh-form GELU implemented by the GEGLU kernel (bit-for-bit the CPU reference
++    // formula) instead of the quick x*sigmoid(1.702x) approximation used by the
++    // standalone HTP_OP_UNARY_GELU kernel.
++    bool try_fuse_gelu_mul(const htp_opnode & node) {
++        if (n_ops == 0) return false;
++        if (node.opcode != HTP_OP_MUL) return false;
++
++        htp_opnode & last_node = ops[n_ops - 1];
++        if (last_node.opcode != HTP_OP_UNARY_GELU) return false;
++        if (!last_node.fused.empty()) return false;
++
++        const ggml_tensor * mul_src0 = node.src0();
++        const ggml_tensor * mul_src1 = node.src1();
++        const ggml_tensor * gelu_out = last_node.dst();
++
++        if (!mul_src0 || !mul_src1 || !gelu_out) return false;
++        if (!ggml_hexagon_tensor_is_fuseable(gelu_out)) return false;
++
++        const ggml_tensor * gate = nullptr; // second GEGLU operand
++        if (mul_src0 == gelu_out || mul_src0->data == gelu_out->data) {
++            gate = mul_src1;
++        } else if (mul_src1 == gelu_out || mul_src1->data == gelu_out->data) {
++            gate = mul_src0;
++        } else {
++            return false;
++        }
++        if (!gate || !gate->data) return false;
++
++        const ggml_tensor * src0 = last_node.src0(); // GELU input
++        const ggml_tensor * dst  = node.dst();
++        if (!src0 || !src0->data || !dst) return false;
++
++        // Mirror ggml_hexagon_supported_activations() for the two-operand GLU form.
++        if (src0->type != GGML_TYPE_F32 || gate->type != GGML_TYPE_F32 || dst->type != GGML_TYPE_F32) return false;
++        if (!ggml_is_contiguous_1(src0) || !ggml_is_contiguous_1(gate) || !ggml_is_contiguous(dst)) return false;
++        if (!ggml_are_same_shape(src0, gate) || !ggml_are_same_shape(src0, dst)) return false;
++
++        size_t extra_bufs = 0, extra_vmem = 0, extra_tens = 0;
++        auto fit_t = [&](const ggml_tensor * t) {
++            if (!t) return;
++            if (!t_map.count(t)) {
++                extra_tens++;
++                auto sbuf = static_cast<ggml_hexagon_shared_buffer *>(t->buffer->context);
++                if (!b_map.count(sbuf->fd())) {
++                    extra_vmem += sbuf->size();
++                    extra_bufs += 1;
++                }
++            }
++        };
++        fit_t(gate);
++        fit_t(dst);
++        if ((extra_bufs + n_bufs) > n_bufs_max || (extra_tens + n_tens) > n_tens_max || (extra_vmem + b_vmem) > b_vmem_max) {
++            return false;
++        }
++
++        last_node.opcode = HTP_OP_GLU_GEGLU;
++        last_node.name   = "GELU+MUL";
++        last_node.inputs.clear();
++        last_node.inputs.push_back(src0);
++        last_node.inputs.push_back(gate);
++        last_node.outputs.clear();
++        last_node.outputs.push_back(dst);
++        last_node.fused.push_back(node.node);
++        // GLU kernels derive their VTCM layout on-device from the tensor descriptors.
++        memset(last_node.kernel_params, 0, sizeof(last_node.kernel_params));
++
++        htp_op_desc & o = h_ops[n_ops - 1];
++        o.opcode = HTP_OP_GLU_GEGLU;
++        memset(o.kernel_params, 0, sizeof(o.kernel_params));
++
++        o.src[0] = add_tensor(src0);
++        o.src[1] = add_tensor(gate);
++        for (uint32_t s = 2; s < HTP_OP_MAX_INPUTS; s++) {
++            o.src[s] = 0xffff;
++        }
++        o.dst[0] = add_tensor(dst);
++        for (uint32_t d = 1; d < HTP_OP_MAX_OUTPUTS; d++) {
++            o.dst[d] = 0xffff;
++        }
++
++        HEX_VERBOSE("ggml-hex: %s fused GELU+MUL (#%u)\n", sess->c_name(), n_ops - 1);
++        return true;
++    }
++
+     bool try_fuse_mul_mat_add(const htp_opnode & node) {
+         if (n_ops == 0) return false;
+         if (node.opcode != HTP_OP_ADD) return false;
+@@ -2518,6 +2611,7 @@ struct ggml_hexagon_opbatch {
+         if (ggml_hexagon_is_fusion_enabled(GGML_HEXAGON_FUSE_MUL_MAT_ADD)   && try_fuse_mul_mat_add(node))   return true;
+         if (ggml_hexagon_is_fusion_enabled(GGML_HEXAGON_FUSE_MUL_MAT_NX)    && try_fuse_mul_mat_nx(node))    return true;
+         if (ggml_hexagon_is_fusion_enabled(GGML_HEXAGON_FUSE_MUL_MAT_ID_NX) && try_fuse_mul_mat_id_nx(node)) return true;
++        if (ggml_hexagon_is_fusion_enabled(GGML_HEXAGON_FUSE_GELU_MUL)      && try_fuse_gelu_mul(node))      return true;
+         return false;
+     }
+ };
+@@ -3647,7 +3741,7 @@ static bool ggml_hexagon_matmul_is_hmx_eligible(
+     // M alignment: Use HMX when M > HTP_MM_HMX_MIN_NROWS.
+     // For MUL_MAT_ID, src1 shape is [K, n_expert_used, n_tokens, 1], so n_tokens is ne12.
+     const int m = is_matmul_id ? ne12 : ne11;
+-    if (m <= HTP_MM_HMX_MIN_NROWS) {
++    if (m <= opt_hmx_min_nrows) {
+         return false;
+     }
+ 
+@@ -3763,7 +3857,7 @@ static void ggml_hexagon_precompute_hvx_mm_params(
+             kparams->src1_row_size = (wtype == GGML_TYPE_Q4_1) ? htp_mm_q8_1_tiled_row_size(ne10) : htp_mm_q8_0_tiled_row_size(ne10);
+ 
+             struct htp_mm_hvx_vtcm_layout L;
+-            uint32_t max_prefetch = (src1_nrows > HTP_MM_HMX_MIN_NROWS) ? 2 : 16;
++            uint32_t max_prefetch = (src1_nrows > (uint32_t) opt_hmx_min_nrows) ? 2 : 16;
+             uint32_t best_n_prefetch = 2;
+             for (uint32_t d = max_prefetch; d >= 2; d /= 2) {
+                 htp_mm_hvx_vtcm_layout_build(
+@@ -3797,7 +3891,7 @@ static void ggml_hexagon_precompute_hvx_mm_params(
+                 }
+ 
+                 struct htp_mm_hvx_vtcm_layout L;
+-                uint32_t max_prefetch = (src1_nrows > HTP_MM_HMX_MIN_NROWS) ? 2 : 16;
++                uint32_t max_prefetch = (src1_nrows > (uint32_t) opt_hmx_min_nrows) ? 2 : 16;
+                 uint32_t best_n_prefetch = 2;
+                 for (uint32_t d = max_prefetch; d >= 2; d /= 2) {
+                     htp_mm_hvx_vtcm_layout_build(
+@@ -4197,7 +4291,7 @@ static void ggml_hexagon_precompute_fused_mmnx_params(
+         uint32_t best_n_prefetch = 16;
+ 
+         if (is_repack) {
+-            const uint32_t max_prefetch = (src1_nrows > HTP_MM_HMX_MIN_NROWS) ? 2 : 16;
++            const uint32_t max_prefetch = (src1_nrows > (uint32_t) opt_hmx_min_nrows) ? 2 : 16;
+             best_n_prefetch = 2;
+             for (uint32_t d = max_prefetch; d >= 2; d /= 2) {
+                 struct htp_mm_hvx_vtcm_layout L;
+@@ -5163,6 +5257,12 @@ static ggml_status ggml_backend_hexagon_graph_compute(ggml_backend_t backend, gg
+                     ggml_node_has_n_uses(graph, i, 1)) {
+                     extra->flags |= GGML_HEXAGON_TENSOR_FUSEABLE;
+                 }
++            } else if (graph->nodes[i]->op == GGML_OP_UNARY && ggml_get_unary_op(graph->nodes[i]) == GGML_UNARY_OP_GELU &&
++                       ggml_node_has_n_uses(graph, i, 1)) {
++                // GELU -> MUL (Gemma-4 per-layer gate). A VIEW node sits between them in the
++                // cgraph, so strict ggml_can_fuse() adjacency fails; the op batch skips empty
++                // ops, and try_fuse_gelu_mul() re-checks the consumer is a MUL at enqueue time.
++                extra->flags |= GGML_HEXAGON_TENSOR_FUSEABLE;
+             }
+         }
+ 
+@@ -6336,6 +6436,7 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
+     const char * str_mbuf     = getenv("GGML_HEXAGON_MBUF");
+     const char * str_optrace  = getenv("GGML_HEXAGON_OPTRACE");
+     const char * str_hostbuf  = getenv("GGML_HEXAGON_HOSTBUF");
++    const char * str_hmx_min  = getenv("GGML_HEXAGON_HMX_MIN_NROWS");
+ 
+     // Init Arch first since it affects other defaults
+     if (!str_arch) {
+@@ -6368,6 +6469,7 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
+ 
+     opt_opfilter  = str_opfilter ? new std::regex(str_opfilter, RE_ICASE) : NULL;
+     opt_verbose   = str_verbose  ? atoi(str_verbose)                      : 0;
++    opt_hmx_min_nrows = str_hmx_min ? atoi(str_hmx_min) : opt_hmx_min_nrows;
+     opt_opbatch   = str_opbatch  ? strtoul(str_opbatch, NULL, 0)          : opt_opbatch;
+     opt_opqueue   = str_opqueue  ? strtoul(str_opqueue, NULL, 0)          : opt_opqueue;
+     opt_optrace   = str_optrace  ? strtoul(str_optrace, NULL, 0)          : (opt_opbatch * 256);

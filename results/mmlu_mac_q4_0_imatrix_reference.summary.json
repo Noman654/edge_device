@@ -1,0 +1,15 @@
+{
+  "config": "mac_q4_0_imatrix_reference",
+  "n": 1000,
+  "accuracy": 0.534,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 559.7,
+  "p50_prompt_ms": 456.1,
+  "thinking": false,
+  "methods": {
+    "logprob": 997,
+    "generated": 0,
+    "none": 3,
+    "error": 0
+  }
+}

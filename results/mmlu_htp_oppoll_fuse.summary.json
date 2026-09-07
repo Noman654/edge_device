@@ -1,0 +1,15 @@
+{
+  "config": "htp_oppoll_fuse",
+  "n": 1000,
+  "accuracy": 0.568,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 401.8,
+  "p50_prompt_ms": 374.5,
+  "thinking": false,
+  "methods": {
+    "logprob": 1000,
+    "generated": 0,
+    "none": 0,
+    "error": 0
+  }
+}

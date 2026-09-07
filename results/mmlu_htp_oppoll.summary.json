@@ -1,0 +1,15 @@
+{
+  "config": "htp_oppoll",
+  "n": 1000,
+  "accuracy": 0.569,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 301.6,
+  "p50_prompt_ms": 256.4,
+  "thinking": false,
+  "methods": {
+    "logprob": 1000,
+    "generated": 0,
+    "none": 0,
+    "error": 0
+  }
+}

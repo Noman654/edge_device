@@ -1,0 +1,36 @@
+{
+  "config": "htp_mtp3",
+  "model": "gemma-4-E2B-it-Q4_0.gguf",
+  "dev_args": "-dev HTP0 -ngl 99 -t 6 -fa on",
+  "env": "GGML_HEXAGON_OPPOLL=1",
+  "init_ms": null,
+  "init_wallclock_ms": 76,
+  "thermal_start": {
+    "max_c": 52.9,
+    "cpu_max_c": 52.9,
+    "npu_max_c": 50.5,
+    "n_zones": 88
+  },
+  "thermal_end": {
+    "max_c": 50.5,
+    "cpu_max_c": 50.5,
+    "npu_max_c": 48.2,
+    "n_zones": 88
+  },
+  "ttft_ms": null,
+  "ttft_prompt_tokens": null,
+  "decode_tps": null,
+  "decode_tps_std": null,
+  "prefill_tps": null,
+  "decode_ms_per_tok_completion": null,
+  "peak_rss_mb": 4,
+  "peak_pss_mb": 2,
+  "peak_rss_rollup_mb": 4,
+  "peak_shared_mb": 2,
+  "decode_tps_completion": null,
+  "draft_acceptance": null,
+  "offloaded": null,
+  "timestamp": "2026-09-06 17:15:07",
+  "raw_tail": "error: invalid argument: -md\n",
+  "_note": "Intentional failure record: draft on CPU (--spec-draft-device none) aborts with 'Gemma4Assistant requires ctx_other'. Working MTP numbers are in results/mtp_server_bench.csv (draft on HTP0)."
+}

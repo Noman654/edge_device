@@ -1,0 +1,15 @@
+{
+  "config": "htp_q4_0_default",
+  "n": 1000,
+  "accuracy": 0.569,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 349.9,
+  "p50_prompt_ms": 300.0,
+  "thinking": false,
+  "methods": {
+    "logprob": 1000,
+    "generated": 0,
+    "none": 0,
+    "error": 0
+  }
+}

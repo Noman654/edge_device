@@ -1,0 +1,15 @@
+{
+  "config": "mac_iq4_nl_embq4_reference",
+  "n": 1000,
+  "accuracy": 0.557,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 396.5,
+  "p50_prompt_ms": 323.9,
+  "thinking": false,
+  "methods": {
+    "logprob": 996,
+    "generated": 0,
+    "none": 4,
+    "error": 0
+  }
+}

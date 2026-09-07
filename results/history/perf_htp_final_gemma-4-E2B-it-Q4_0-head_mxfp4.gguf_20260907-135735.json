@@ -1,0 +1,35 @@
+{
+  "config": "htp_final_gemma-4-E2B-it-Q4_0-head_mxfp4.gguf",
+  "model": "gemma-4-E2B-it-Q4_0-head_mxfp4.gguf",
+  "dev_args": "-dev HTP0 -ngl 99 -t 6 -fa on",
+  "env": "GGML_HEXAGON_OPPOLL=1",
+  "init_ms": 1308.57,
+  "init_wallclock_ms": 1679,
+  "thermal_start": {
+    "max_c": 49.0,
+    "cpu_max_c": 49.0,
+    "npu_max_c": 44.8,
+    "n_zones": 88
+  },
+  "thermal_end": {
+    "max_c": 50.5,
+    "cpu_max_c": 50.5,
+    "npu_max_c": 48.2,
+    "n_zones": 88
+  },
+  "ttft_ms": 183.77,
+  "ttft_prompt_tokens": 142.0,
+  "decode_tps": 34.9622,
+  "decode_tps_std": 0.004854,
+  "prefill_tps": 831.999658,
+  "decode_ms_per_tok_completion": 29.18,
+  "peak_rss_mb": 1650,
+  "peak_pss_mb": 1641,
+  "peak_rss_rollup_mb": 1650,
+  "peak_shared_mb": 9,
+  "decode_tps_completion": 34.27004797806717,
+  "draft_acceptance": null,
+  "offloaded": null,
+  "timestamp": "2026-09-07 13:57:35",
+  "raw_tail": " 1 | MATMUL_INT8 = 1 | DOTPROD = 1 | REPACK = 1 | \n0.01.499.767 I \n0.01.500.424 I sampler seed: 1294911039\n0.01.500.433 I sampler params: \n\trepeat_last_n = 64, repeat_penalty = 1.000, frequency_penalty = 0.000, presence_penalty = 0.000\n\tdry_multiplier = 0.000, dry_base = 1.750, dry_allowed_length = 2, dry_penalty_last_n = 64\n\ttop_k = 64, top_p = 0.950, min_p = 0.050, xtc_probability = 0.000, xtc_threshold = 0.100, typical_p = 1.000, top_n_sigma = -1.000, temp = 0.000\n\tmirostat = 0, mirostat_lr = 0.100, mirostat_ent = 5.000, adaptive_target = -1.000, adaptive_decay = 0.900\n0.01.500.436 I sampler chain: logits -> logit-bias -> ?penalties -> ?dry -> ?top-n-sigma -> top-k -> ?typical -> top-p -> min-p -> ?xtc -> temp-ext -> dist \n0.01.500.437 I generate: n_ctx = 131072, n_batch = 2048, n_predict = 128, n_keep = 1\n0.01.500.437 I \nSummarize the following passage in three sentences. The Snapdragon 8 Elite mobile platform integrates a custom Oryon CPU, an Adreno GPU, and a Hexagon NPU with HVX vector units and an HMX matrix accelerator. On-device language models benefit from the NPU's tightly coupled VTCM memory and DMA engines, which allow weight tiles to be streamed while computation proceeds. However, unsupported operators fall back to the CPU, and the cost of synchronizing buffers between the host and the NPU can dominate small batch workloads. Careful selection of quantization format, KV cache layout, batch size, and operator fusion determines whether the accelerator delivers real speedups over a well tuned CPU implementation in practice.\n\nIn summary, the Snapdragon 8 Elite platform features a powerful custom Oryon CPU, Adreno GPU, and a Hexagon NPU with specialized accelerators. The NPU enables efficient on-device language model operations through optimized memory access, though performance can be bottlenecked by synchronization costs in small batches. Ultimately, achieving significant speedups depends on careful optimization of various factors like quantization and batch size to realize the full potential of the hardware.\n\nIn summary, the Snapdragon 8 Elite platform features a powerful custom Oryon CPU, Adreno GPU, and a Hexagon NPU with specialized accelerators. The NPU enables efficient on-device\n\n0.05.411.497 I common_perf_print:    sampling time =      20.42 ms\n0.05.411.498 I common_perf_print:    samplers time =      13.21 ms /   270 tokens\n0.05.411.500 I common_perf_print:        load time =    1308.57 ms\n0.05.411.501 I common_perf_print: prompt eval time =     183.77 ms /   142 tokens (    1.29 ms per token,   772.70 tokens per second)\n0.05.411.508 I common_perf_print:        eval time =    3705.75 ms /   127 runs   (   29.18 ms per token,    34.27 tokens per second)\n0.05.411.508 I common_perf_print:       total time =    3911.80 ms /   269 tokens\n0.05.411.509 I common_perf_print: unaccounted time =       1.86 ms /   0.0 %      (total - sampling - prompt eval - eval) / (total)\n0.05.411.509 I common_perf_print:    graphs reused =        125\n"
+}

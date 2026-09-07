@@ -1,0 +1,9 @@
+htp_q4_0_default	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	-
+htp_oppoll	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1
+htp_nhvx4	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_NHVX=4
+htp_nhvx2	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_NHVX=2
+htp_oppoll_nhvx4	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1 GGML_HEXAGON_NHVX=4
+htp_mm_tiled	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_MM_SELECT=2
+htp_fa_hvx	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_FA_SELECT=1
+htp_kvq8	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on -ctk q8_0 -ctv q8_0	-
+htp_lmhead_cpu	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on -ot token_embd.weight=CPU	-

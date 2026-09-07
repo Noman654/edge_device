@@ -1,0 +1,15 @@
+{
+  "config": "mac_q4_0_ctrl_reference",
+  "n": 1000,
+  "accuracy": 0.518,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 381.7,
+  "p50_prompt_ms": 260.3,
+  "thinking": false,
+  "methods": {
+    "logprob": 998,
+    "generated": 0,
+    "none": 2,
+    "error": 0
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "config": "htp_final",
+  "n": 1000,
+  "accuracy": 0.565,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 279.5,
+  "p50_prompt_ms": 240.0,
+  "thinking": false,
+  "methods": {
+    "logprob": 1000,
+    "generated": 0,
+    "none": 0,
+    "error": 0
+  }
+}

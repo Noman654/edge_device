@@ -1,0 +1,2 @@
+htp_vmem512	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_VMEM=512
+htp_oppoll_vmem512	gemma-4-E2B-it-Q4_0.gguf	-dev HTP0 -ngl 99 -t 6 -fa on	GGML_HEXAGON_OPPOLL=1 GGML_HEXAGON_VMEM=512

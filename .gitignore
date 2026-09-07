@@ -1,0 +1,9 @@
+llama.cpp/
+models/*
+*.pem
+results/raw/
+__pycache__/
+.venv/
+!models/SHA256SUMS
+
+eval/calib/

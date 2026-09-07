@@ -1,0 +1,15 @@
+{
+  "config": "htp_q8_0_oppoll",
+  "n": 1000,
+  "accuracy": 0.583,
+  "mean_prompt_tokens": 136.3,
+  "mean_prompt_ms": 508.6,
+  "p50_prompt_ms": 456.5,
+  "thinking": false,
+  "methods": {
+    "logprob": 995,
+    "generated": 0,
+    "none": 5,
+    "error": 0
+  }
+}
